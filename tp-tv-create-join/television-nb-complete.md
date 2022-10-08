@@ -56,13 +56,13 @@ l'idée est de se mettre en vraie situation; les données qu'on trouve ici ou l�
 
 # NOTE: si vous n'avez pas le module head, ouvrez le fichier dans votre éditeur favori
 
-head("data/television.txt", 10)
+# head("data/television.txt", 10)
 ```
 
 ```{code-cell} ipython3
 # sauf que si on le charge: ouh là !
 
-df = pd.read_csv("data/television.txt", sep="\t")
+df = pd.read_csv("television.txt", sep="\t")
 df
 ```
 
@@ -106,7 +106,7 @@ quelques indices valides pour tout le TP
 # pd.Series.unique?
 
 # df.to_excel?
-# !pip install openpyxl
+!pip install openpyxl
 ```
 
 ---
@@ -121,7 +121,7 @@ la première étape donc, consiste à supprimer les colonnes vides
 
 ```{code-cell} ipython3
 # on recharge pour être sûr
-df = pd.read_csv("data/television.txt", sep="\t")
+df = pd.read_csv("television.txt", sep="\t")
 df.shape
 ```
 
@@ -138,7 +138,7 @@ le mieux c'est d'utiliser `dropna`
 
 ```{code-cell} ipython3
 # à vous
-...
+df = df.dropna(axis='columns',how='all')
 ```
 
 ```{code-cell} ipython3
@@ -162,7 +162,8 @@ donc voyons comment on peut faire le même nettoyage, mais de manière plus fine
 
 ```{code-cell} ipython3
 # on recharge pour être sûr
-df = pd.read_csv("data/television.txt", sep="\t")
+df = pd.read_csv("television.txt", sep="\t")
+df.columns
 ```
 
 +++ {"tags": ["level_basic"]}
@@ -174,7 +175,8 @@ d'abord comment feriez-vous, étant donné le nom d'une colonne, pour savoir si 
 ```{code-cell} ipython3
 # à vous 
 def is_empty_column(df, colname):
-    ...
+    res = df[colname].notna().sum() == 0
+    return res
 ```
 
 ```{code-cell} ipython3
@@ -204,9 +206,12 @@ ensuite il ne reste qu'à calculer la liste des colonnes vides, pour la passer �
 # à vous
 
 # calculez la liste des colonnes vides
-empty_columns = ...
+is_empty_column_vect = np.vectorize(lambda c: is_empty_column(df,c))
+mask = is_empty_column_vect(df.columns)
+empty_columns = df.columns[mask]
 
 # puis utilisez df.drop
+df = df.drop(labels=empty_columns, axis=1)
 ```
 
 ```{code-cell} ipython3
@@ -222,6 +227,7 @@ Bien sûr on a découpé le problème en deux mais en fait ça peut se récrire 
 # à vous
 
 # récrire tout ceci en une seule passe
+df = pd.read_csv("television.txt", sep="\t").dropna(axis=1,how='all')
 ```
 
 ```{code-cell} ipython3
@@ -252,7 +258,7 @@ la méthode la plus simple consiste à utiliser [`Series.unique`](https://pandas
 
 ```{code-cell} ipython3
 # à vous
-unique1 = ...
+unique1 = df['cLT2FREQ'].unique()
 ```
 
 ```{code-cell} ipython3
@@ -270,14 +276,18 @@ np.all(unique1[:-1] == np.arange(1, 4)) and np.isnan(unique1[-1])
 
 # point de réflexion : pourquoi ceci ne renvoie-t-il pas True ?
 unique1.sort()
-np.all(unique1 == np.array([1., 2., 3., np.nan]))
+unique1, np.all(unique1 == np.array([1., 2., 3., np.nan]))
+```
+
+```{code-cell} ipython3
+type(unique1[-1]), type(np.nan)
 ```
 
 ### un ensemble
 
 +++ {"tags": ["level_intermediate"]}
 
-**optionnel** pour ceux qui sont confortables en Pythone "de base"
+**optionnel** pour ceux qui sont confortables en Python "de base"
 
 +++
 
@@ -293,7 +303,7 @@ comment feriez-vous pour traduire 'brutalement' la colonne `cLT2FREQ` en un ense
 
 ```{code-cell} ipython3
 # à vous
-unique2 = ...
+unique2 = set(df['cLT2FREQ'])
 ```
 
 ```{code-cell} ipython3
@@ -314,7 +324,7 @@ dans un premier temps on vous demande de calculer le nombre de lignes concernée
 
 ```{code-cell} ipython3
 # à vous
-nb_lines_to_clean = ...
+nb_lines_to_clean = df['cLT2FREQ'].isna().sum()
 ```
 
 ```{code-cell} ipython3
@@ -344,7 +354,7 @@ expected_lines
 :hide_input: false
 
 # on recharge à tout hasard
-df = pd.read_csv("data/television.txt", sep="\t").dropna(axis='columns', how='all')
+df = pd.read_csv("television.txt", sep="\t").dropna(axis='columns', how='all')
 print(df.shape)
 ```
 
@@ -362,6 +372,10 @@ option 1: on peut utiliser `df.drop()`, l'avantage étant qu'on peut faire l'op�
 # à vous
 
 # df.drop(...)
+
+target_rows = df[df['cLT2FREQ'].isna()].index
+df.drop(index=target_rows,inplace=True)
+df
 ```
 
 ```{code-cell} ipython3
@@ -377,7 +391,7 @@ df.shape == (7386, 4)
 :hide_input: false
 
 # on recharge à tout hasard
-df = pd.read_csv("data/television.txt", sep="\t").dropna(axis='columns', how='all')
+df = pd.read_csv("television.txt", sep="\t").dropna(axis='columns', how='all')
 print(df.shape)
 ```
 
@@ -387,7 +401,7 @@ option 2: il y a plein d'autres façons de faire, on peut aussi utiliser tout si
 
 ```{code-cell} ipython3
 # à vous
-df = ...
+df = df[df['cLT2FREQ'].notna()]
 ```
 
 ```{code-cell} ipython3
@@ -409,14 +423,14 @@ je vous laisse conclure le TP, il s'agit d'enregistrer nos données nettoyées d
 filename = "television.xlsx"
 
 # df.to_excel?
+df.to_excel(excel_writer=filename, sheet_name='sheet_1')
 ```
 
 je vous laisse éventuellement vérifier votre code en rechargeant sous excel le fichier produit
 
-+++
-
-![](media/television.png)
-
-+++
+```{code-cell} ipython3
+df = pd.read_excel(filename)
+df
+```
 
 ***
